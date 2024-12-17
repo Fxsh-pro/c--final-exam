@@ -1,14 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media;
-using Color = System.Drawing.Color;
+﻿using Color = System.Drawing.Color;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Drawing;
+
 
 namespace ImageChecker.core
 {
@@ -37,20 +29,16 @@ namespace ImageChecker.core
                 System.Drawing.Pen guidePen = new System.Drawing.Pen(Color.Red, 5);
 
                 // Draw lines from corners
-                g.DrawLine(guidePen, 0, 0, ProcessedImage.Width, ProcessedImage.Height); // Top-left to bottom-right
-                g.DrawLine(guidePen, ProcessedImage.Width, 0, 0, ProcessedImage.Height); // Top-right to bottom-left
+                g.DrawLine(guidePen, 0, 0, ProcessedImage.Width, ProcessedImage.Height); 
+                g.DrawLine(guidePen, ProcessedImage.Width, 0, 0, ProcessedImage.Height);
             }
         }
 
         public void Rotate(int angle)
         {
-            /* Bitmap rotatedImg = (Bitmap)ProcessedImage.Clone(); 
-            angle = angle % 360;  
-            _currentRotationAngle = (_currentRotationAngle + angle) % 360;
-            rotatedImg.RotateFlip(GetRotateFlipType(angle));
-            return rotatedImg; */ // Возвращаем новый объект с повернутым изображением
+
             angle = angle % 360;
-            _currentRotationAngle = (_currentRotationAngle + angle) % 360; // Update rotation state
+            _currentRotationAngle = (_currentRotationAngle + angle) % 360; 
 
             ProcessedImage.RotateFlip(GetRotateFlipType(angle));
         }
@@ -99,13 +87,9 @@ namespace ImageChecker.core
             restoreProcessedImage();
             using (Graphics g = Graphics.FromImage(ProcessedImage))
             {
-                // Create a red pen for the guiding lines
                 var guidePen = new System.Drawing.Pen(System.Drawing.Color.Red, 5);
 
-                // Draw the vertical line at the cursor X position
                 g.DrawLine(guidePen, (float)cursorPosition.X, 0, (float)cursorPosition.X, ProcessedImage.Height);
-
-                // Draw the horizontal line at the cursor Y position
                 g.DrawLine(guidePen, 0, (float)cursorPosition.Y, ProcessedImage.Width, (float)cursorPosition.Y);
             }
         }
@@ -118,7 +102,6 @@ namespace ImageChecker.core
                 // Create a blue pen for the diagonal lines
                 var guidePen = new System.Drawing.Pen(System.Drawing.Color.Blue, 5);
 
-                // Draw the diagonal lines
                 g.DrawLine(guidePen, (float)cursorPosition.X, 0, (float)cursorPosition.X, (float)ProcessedImage.Height); // Vertical line
                 g.DrawLine(guidePen, 0, (float)cursorPosition.Y, (float)ProcessedImage.Width, (float)cursorPosition.Y); // Horizontal line
             }
@@ -129,44 +112,51 @@ namespace ImageChecker.core
             restoreProcessedImage();
             using (Graphics g = Graphics.FromImage(ProcessedImage))
             {
-                // Create a blue pen for the circle
                 var guidePen = new System.Drawing.Pen(System.Drawing.Color.Blue, 3);  // Adjusted the pen width to 3 for a thinner circle
 
-                // Calculate the rectangle for the circle, centered at cursor position
                 int x = (int)(cursorPosition.X - radius / 2);  // Half the radius to center the circle
                 int y = (int)(cursorPosition.Y - radius / 2);  // Half the radius to center the circle
                 int diameter = radius;  // Reduced the size
 
-                // Draw the circle
                 g.DrawEllipse(guidePen, x, y, diameter, diameter);
+            }
+        }
+
+        public void DrawCursorRectangle(System.Windows.Point cursorPosition, int size)
+        {
+            restoreProcessedImage();
+            using (Graphics g = Graphics.FromImage(ProcessedImage))
+            {
+                var guidePen = new System.Drawing.Pen(System.Drawing.Color.Red, 3); // Adjust width as needed
+
+                int x = (int)(cursorPosition.X - size / 2);
+                int y = (int)(cursorPosition.Y - size / 2);
+                int width = size;
+                int height = size;
+
+                g.DrawRectangle(guidePen, x, y, width, height);
             }
         }
 
         public void Zoom(float zoomFactor)
         {
-            // Add the input zoom factor to the current zoom factor
-            _zoomFactor += zoomFactor;
+            _zoomFactor = zoomFactor;
 
-            // Ensure the zoom factor is within reasonable bounds (e.g., 0.1 to 10)
-            _zoomFactor = Math.Max(0.1f, Math.Min(_zoomFactor, 10f));
+            int newWidth = (int)(CurrentImage.Width * zoomFactor);
+            int newHeight = (int)(CurrentImage.Height * zoomFactor);
 
-            // Calculate new width and height based on the updated zoom factor
-            int newWidth = (int)(CurrentImage.Width * _zoomFactor);
-            int newHeight = (int)(CurrentImage.Height * _zoomFactor);
-
-            // Create a new bitmap with the new dimensions
             Bitmap zoomedImage = new Bitmap(newWidth, newHeight);
+
             zoomedImage.SetResolution(CurrentImage.HorizontalResolution, CurrentImage.VerticalResolution);
 
-            // Use Graphics to draw the image with scaling applied
             using (Graphics g = Graphics.FromImage(zoomedImage))
             {
-                g.Clear(Color.Transparent); // Clear background to prevent any artifacts
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+
                 g.DrawImage(CurrentImage, 0, 0, newWidth, newHeight);
             }
-
-            // Update ProcessedImage with the zoomed version
             ProcessedImage = zoomedImage;
         }
     }

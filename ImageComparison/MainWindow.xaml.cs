@@ -27,7 +27,7 @@ namespace ImageComparison
         private readonly Button[] _deleteButtons;
         private ImageTransformer[] _imageTransformers;
 
-        private DateTime _lastDrawTime = DateTime.MinValue;
+        private int _circleRadius = 50;
 
         int count = 1;
         public MainWindow()
@@ -38,8 +38,6 @@ namespace ImageComparison
             _fileInfoSlots = new[] { FileInfo1, FileInfo2, FileInfo3, FileInfo4 };
             _deleteButtons = new[] { DeleteFirstImageBtn, DeleteSecondImageBtn, DeleteThirdImageBtn, DeleteFourthImageBtn };
             _imageTransformers = new ImageTransformer[_imageSlots.Length];
-
-
         }
 
         private void ChooseFileButton_Click(object sender, RoutedEventArgs e)
@@ -193,7 +191,8 @@ namespace ImageComparison
 
         private void Image_MouseMove(object sender, MouseEventArgs e)
         {
-            if (WiteLinesCheckBox.IsChecked != true && DiagonalLinesCheckBox.IsChecked != true && CircleLinesCheckBox.IsChecked != true)
+            if (WiteLinesCheckBox.IsChecked != true && DiagonalLinesCheckBox.IsChecked != true &&
+                CircleLinesCheckBox.IsChecked != true && RectangleLinesCheckBox.IsChecked != true)
             {
                 return;
             }
@@ -234,6 +233,10 @@ namespace ImageComparison
                 {
                     DrawCircle(new System.Windows.Point(pixelX, pixelY), i);
                 }
+                else if (RectangleLinesCheckBox.IsChecked == true)  // Check for rectangle checkbox
+                {
+                    DrawRectangle(new System.Windows.Point(pixelX, pixelY), i);
+                }
             }
         }
 
@@ -256,11 +259,63 @@ namespace ImageComparison
         private void DrawCircle(System.Windows.Point cursorPosition, int imageIndex)
         {
             var transformer = _imageTransformers[imageIndex];
-            if (transformer == null) return;
-
-            // Draw the circle (radius is fixed or you can adjust it as needed)
-            transformer.DrawCursorCircle(cursorPosition, 50);  // 50 is the radius of the circle
+            if (transformer == null) return; 
+            transformer.DrawCursorCircle(cursorPosition, _circleRadius);
             _imageSlots[imageIndex].Source = BitmapToImageSource(transformer.ProcessedImage);
+        }
+
+        private void DrawRectangle(System.Windows.Point cursorPosition, int imageIndex)
+        {
+            var transformer = _imageTransformers[imageIndex];
+            if (transformer == null) return;
+            transformer.DrawCursorRectangle(cursorPosition, _circleRadius);
+            _imageSlots[imageIndex].Source = BitmapToImageSource(transformer.ProcessedImage);
+        }
+
+        private void Image_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Check if the Ctrl key is pressed
+            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+            {
+                // Adjust the radius based on scroll direction
+                if (e.Delta > 0) // Scroll up
+                {
+                    _circleRadius += 5; // Increase radius
+                }
+                else if (e.Delta < 0) // Scroll down
+                {
+                    _circleRadius = Math.Max(5, _circleRadius - 5); // Decrease radius (min 5)
+                }
+
+                // Get the image under the mouse
+                var image = sender as System.Windows.Controls.Image;
+                if (image == null) return;
+
+                // Get the cursor position on the image
+                var imagePosition = e.GetPosition(image);
+                var source = image.Source as BitmapSource;
+
+                if (source == null) return;
+
+                double scaleX = source.PixelWidth / image.ActualWidth;
+                double scaleY = source.PixelHeight / image.ActualHeight;
+
+                var pixelX = imagePosition.X * scaleX;
+                var pixelY = imagePosition.Y * scaleY;
+  
+                // Redraw the circle with the updated radius
+                for (int i = 0; i < _imageSlots.Length; i++)
+                {
+                    if (_imageSlots[i] == image)
+                    {
+                        if (CircleLinesCheckBox.IsChecked == true)
+                            DrawCircle(new System.Windows.Point(pixelX, pixelY), i);
+                        else if (RectangleLinesCheckBox.IsChecked == true)
+                            DrawRectangle(new System.Windows.Point(pixelX, pixelY), i);
+                        break;
+                    }
+                }
+            }
         }
 
         private void ZoomButton_Click(object sender, RoutedEventArgs e)
@@ -273,7 +328,7 @@ namespace ImageComparison
 
         private void ZoomImage(float zoomFactor)
         {
-            
+
             for (int i = 0; i < _imageTransformers.Length; i++)
             {
                 if (_imageTransformers[i] != null)
@@ -283,8 +338,6 @@ namespace ImageComparison
                     _imageSlots[i].Source = BitmapToImageSource(_imageTransformers[i].ProcessedImage);
                 }
             }
-
-            
         }
 
     }

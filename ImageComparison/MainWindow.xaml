@@ -23,7 +23,7 @@
                 <!-- Image 1 -->
                 <StackPanel HorizontalAlignment="Center" Margin="10">
                     <TextBlock Name="FileInfo1" HorizontalAlignment="Center" Margin="5"/>
-                    <Image Name="Image1" MaxHeight="600" MaxWidth="500" Margin="5" MouseMove="Image_MouseMove"/>
+                    <Image Name="Image1" MaxHeight="600" MaxWidth="500" Margin="5" MouseMove="Image_MouseMove" MouseWheel="Image_MouseWheel"/>
                     <Button Content="Удалить" Click="DeleteImage_Click" Margin="5" 
                      Visibility="Hidden" Name="DeleteFirstImageBtn"/>
                 </StackPanel>
@@ -31,21 +31,21 @@
                 <!-- Image 2 -->
                 <StackPanel HorizontalAlignment="Center" Margin="10">
                     <TextBlock Name="FileInfo2" HorizontalAlignment="Center" Margin="5"/>
-                    <Image Name="Image2" MaxHeight="600" MaxWidth="500" Margin="5" MouseMove="Image_MouseMove"/>
+                    <Image Name="Image2" MaxHeight="600" MaxWidth="500" Margin="5" MouseMove="Image_MouseMove" MouseWheel="Image_MouseWheel"/>
                     <Button Content="Удалить" Click="DeleteImage_Click" Margin="5" Visibility="Hidden" Name="DeleteSecondImageBtn"/>
                 </StackPanel>
 
                 <!-- Image 3 -->
                 <StackPanel HorizontalAlignment="Center" Margin="10">
                     <TextBlock Name="FileInfo3" HorizontalAlignment="Center" Margin="5"/>
-                    <Image Name="Image3" MaxHeight="600" MaxWidth="500" Margin="5" MouseMove="Image_MouseMove"/>
+                    <Image Name="Image3" MaxHeight="600" MaxWidth="500" Margin="5" MouseMove="Image_MouseMove" MouseWheel="Image_MouseWheel"/>
                     <Button Content="Удалить" Click="DeleteImage_Click" Margin="5" Visibility="Hidden" Name="DeleteThirdImageBtn"/>
                 </StackPanel>
 
                 <!-- Image 4 -->
                 <StackPanel HorizontalAlignment="Center" Margin="10">
                     <TextBlock Name="FileInfo4" HorizontalAlignment="Center" Margin="5"/>
-                    <Image Name="Image4" MaxHeight="600" MaxWidth="500" Margin="5" MouseMove="Image_MouseMove"/>
+                    <Image Name="Image4" MaxHeight="600" MaxWidth="500" Margin="5" MouseMove="Image_MouseMove" MouseWheel="Image_MouseWheel"/>
                     <Button Content="Удалить" Click="DeleteImage_Click" Margin="5" Visibility="Hidden" Name="DeleteFourthImageBtn"/>
                 </StackPanel>
             </WrapPanel>
@@ -57,7 +57,8 @@
             <CheckBox Content="Process All Images" Grid.Row="3" Margin="10" Checked="ProcessAllImages_Checked" Unchecked="ProcessAllImages_Unchecked"/>
             <CheckBox Name="DiagonalLinesCheckBox" Content="Направляющие диагональные линии за курсором" Margin="10"/>
             <CheckBox Name="CircleLinesCheckBox" Content="Направляющий круг за курсором" Margin="10"/>
-           
+            <CheckBox Name="RectangleLinesCheckBox" Content="Направляющий прямоугольник за курсором" Margin="10"/>
+
 
             <Button Content="Rotate 90°" Margin="10" Click="RotateButton_Click" Tag="90"/>
             <Button Content="Rotate 180°" Margin="10" Click="RotateButton_Click" Tag="180"/>
