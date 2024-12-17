@@ -259,7 +259,7 @@ namespace ImageComparison
         private void DrawCircle(System.Windows.Point cursorPosition, int imageIndex)
         {
             var transformer = _imageTransformers[imageIndex];
-            if (transformer == null) return; 
+            if (transformer == null) return;
             transformer.DrawCursorCircle(cursorPosition, _circleRadius);
             _imageSlots[imageIndex].Source = BitmapToImageSource(transformer.ProcessedImage);
         }
@@ -274,7 +274,12 @@ namespace ImageComparison
 
         private void Image_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            // Check if the Ctrl key is pressed
+            var image = sender as System.Windows.Controls.Image;
+            if (image == null) return;
+
+            var source = image.Source as BitmapSource;
+            if (source == null) return;
+
             if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
             {
                 // Adjust the radius based on scroll direction
@@ -287,13 +292,9 @@ namespace ImageComparison
                     _circleRadius = Math.Max(5, _circleRadius - 5); // Decrease radius (min 5)
                 }
 
-                // Get the image under the mouse
-                var image = sender as System.Windows.Controls.Image;
-                if (image == null) return;
-
                 // Get the cursor position on the image
                 var imagePosition = e.GetPosition(image);
-                var source = image.Source as BitmapSource;
+                
 
                 if (source == null) return;
 
@@ -302,7 +303,7 @@ namespace ImageComparison
 
                 var pixelX = imagePosition.X * scaleX;
                 var pixelY = imagePosition.Y * scaleY;
-  
+
                 // Redraw the circle with the updated radius
                 for (int i = 0; i < _imageSlots.Length; i++)
                 {
@@ -315,6 +316,59 @@ namespace ImageComparison
                         break;
                     }
                 }
+            }
+            else
+            {
+                int a = e.Delta;
+                for (int i = 0; i < _imageSlots.Length; i++)
+                {
+                    if (_imageSlots[i] != null)
+                    {
+                        var transform = _imageSlots[i].RenderTransform as ScaleTransform;
+                        if (transform == null)
+                        {
+                            transform = new ScaleTransform(1.0, 1.0);
+                            _imageSlots[i].RenderTransform = transform;
+                            _imageSlots[i].RenderTransformOrigin = new System.Windows.Point(0.5, 0.5); 
+                        }
+
+                        double zoomFactor = e.Delta > 0 ? 1.1 : 0.9; // Увеличение/уменьшение на 10%
+                        transform.ScaleX *= zoomFactor;
+                        transform.ScaleY *= zoomFactor;
+
+                        // Ограничиваем минимальный и максимальный зум
+                        transform.ScaleX = Math.Max(0.1, Math.Min(1.0, transform.ScaleX));
+                        transform.ScaleY = Math.Max(0.1, Math.Min(1.0, transform.ScaleY));
+                    }
+                }
+                
+
+                // Apply zoom to all images
+                /*for (int i = 0; i < _imageTransformers.Length; i++)
+                {
+                    if (_imageTransformers[i] != null)
+                    {
+                        // Zoom each image (apply same zoom factor)
+                        _imageTransformers[i].Zoom(zoomFactor);
+                        _imageSlots[i].Source = BitmapToImageSource(_imageTransformers[i].ProcessedImage);
+                    }
+                }*/
+                /*var transform = image.RenderTransform as ScaleTransform;
+                if (transform == null)
+                {
+                    transform = new ScaleTransform(1.0, 1.0);
+                    image.RenderTransform = transform;
+                    image.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5); // Центрируем трансформацию
+                }
+
+                // Изменяем масштабирование в зависимости от направления прокрутки
+                double zoomFactor = e.Delta > 0 ? 1.1 : 0.9; // Увеличение/уменьшение на 10%
+                transform.ScaleX *= zoomFactor;
+                transform.ScaleY *= zoomFactor;
+
+                // Ограничиваем минимальный и максимальный зум
+                transform.ScaleX = Math.Max(0.1, Math.Min(1.0, transform.ScaleX));
+                transform.ScaleY = Math.Max(0.1, Math.Min(1.0, transform.ScaleY));*/
             }
         }
 
@@ -334,8 +388,6 @@ namespace ImageComparison
                 if (_imageTransformers[i] != null)
                 {
                     CursorPositionText.Text = zoomFactor.ToString();
-                    _imageTransformers[i].Zoom(zoomFactor);
-                    _imageSlots[i].Source = BitmapToImageSource(_imageTransformers[i].ProcessedImage);
                 }
             }
         }

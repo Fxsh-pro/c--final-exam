@@ -1,5 +1,8 @@
 ﻿using Color = System.Drawing.Color;
 using System.Drawing;
+using System.Windows.Media;
+using System.IO;
+using System.Windows.Media.Imaging;
 
 
 namespace ImageChecker.core
@@ -9,7 +12,9 @@ namespace ImageChecker.core
         public Bitmap CurrentImage { get; set; }
         public Bitmap ProcessedImage { get; set; }
         private int _currentRotationAngle = 0;
-        private float _zoomFactor = 1f;
+        private double _zoomFactor = 1f;
+        private const double MinZoom = 0.1;  // Minimum zoom
+        private const double MaxZoom = 3.0;  // Maximum zoom
         public ImageTransformer(string filePath)
         {
             CurrentImage = new Bitmap(filePath);
@@ -29,7 +34,7 @@ namespace ImageChecker.core
                 System.Drawing.Pen guidePen = new System.Drawing.Pen(Color.Red, 5);
 
                 // Draw lines from corners
-                g.DrawLine(guidePen, 0, 0, ProcessedImage.Width, ProcessedImage.Height); 
+                g.DrawLine(guidePen, 0, 0, ProcessedImage.Width, ProcessedImage.Height);
                 g.DrawLine(guidePen, ProcessedImage.Width, 0, 0, ProcessedImage.Height);
             }
         }
@@ -38,7 +43,7 @@ namespace ImageChecker.core
         {
 
             angle = angle % 360;
-            _currentRotationAngle = (_currentRotationAngle + angle) % 360; 
+            _currentRotationAngle = (_currentRotationAngle + angle) % 360;
 
             ProcessedImage.RotateFlip(GetRotateFlipType(angle));
         }
@@ -138,26 +143,61 @@ namespace ImageChecker.core
             }
         }
 
-        public void Zoom(float zoomFactor)
+        public void Zoom(System.Windows.Controls.Image image, double zoomFactor, int delta)
         {
-            _zoomFactor = zoomFactor;
-
-            int newWidth = (int)(CurrentImage.Width * zoomFactor);
-            int newHeight = (int)(CurrentImage.Height * zoomFactor);
-
-            Bitmap zoomedImage = new Bitmap(newWidth, newHeight);
-
-            zoomedImage.SetResolution(CurrentImage.HorizontalResolution, CurrentImage.VerticalResolution);
-
-            using (Graphics g = Graphics.FromImage(zoomedImage))
+            var transform = image.RenderTransform as ScaleTransform;
+            if (transform == null)
             {
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-
-                g.DrawImage(CurrentImage, 0, 0, newWidth, newHeight);
+                transform = new ScaleTransform(1.0, 1.0);
+                image.RenderTransform = transform;
+                image.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5); // Центрируем трансформацию
             }
-            ProcessedImage = zoomedImage;
+
+            // Apply zoom based on scroll direction (without needing Ctrl)
+            zoomFactor = delta > 0 ? 1.1 : 0.9; // Увеличение/уменьшение на 10%
+            transform.ScaleX *= zoomFactor;
+            transform.ScaleY *= zoomFactor;
+
+            // Ограничиваем минимальный и максимальный зум
+            transform.ScaleX = Math.Max(0.1, Math.Min(1.0, transform.ScaleX));
+            transform.ScaleY = Math.Max(0.1, Math.Min(1.0, transform.ScaleY));
+
+            ProcessedImage = ConvertImageToBitmap(image);
+        }
+
+        public static Bitmap ConvertImageToBitmap(System.Windows.Controls.Image wpfImage)
+        {
+            // Create a RenderTargetBitmap to render the image
+            RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap(
+                (int)wpfImage.Width,
+                (int)wpfImage.Height,
+                96, 96,
+                PixelFormats.Pbgra32);
+
+            // Create a DrawingVisual to render the image
+            DrawingVisual drawingVisual = new DrawingVisual();
+            using (DrawingContext drawingContext = drawingVisual.RenderOpen())
+            {
+                // Draw the Image onto the DrawingContext
+                drawingContext.DrawImage(wpfImage.Source, new System.Windows.Rect(0, 0, wpfImage.Width, wpfImage.Height));
+            }
+
+            // Render the DrawingVisual into the RenderTargetBitmap
+            renderTargetBitmap.Render(drawingVisual);
+
+            // Create a MemoryStream to store the image data
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                // Encode the RenderTargetBitmap into PNG (you can use other formats as well)
+                BitmapEncoder encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
+
+                encoder.Save(memoryStream);
+
+                // Convert MemoryStream to Bitmap (System.Drawing.Bitmap)
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                return new Bitmap(memoryStream);
+            }
         }
     }
 }
